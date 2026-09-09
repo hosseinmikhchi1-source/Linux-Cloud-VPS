@@ -2,9 +2,6 @@ name: Linux Cloud VPS
 
 on:
   workflow_dispatch:
-  schedule:
-    # اجرای خودکار هر ۵ ساعت و ۴۵ دقیقه
-    - cron: '45 */5 * * *'
 
 jobs:
   build:
@@ -15,7 +12,6 @@ jobs:
     - name: Install and Setup Tailscale
       env:
         TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
-        SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
       run: |
         # دانلود و نصب Tailscale
         curl -fsSL https://tailscale.com/install.sh | sh
@@ -23,20 +19,30 @@ jobs:
         # اتصال به شبکه Tailscale
         sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="github-ubuntu-server"
         
-        # تنظیم رمز عبور یوزر runner
-        echo "runner:$SERVER_PASSWORD" | sudo chpasswd
+        # تنظیم رمز عبور برای یوزر runner
+        echo "runner:P@ssw0rd1qazXSW@#" | sudo chpasswd
         
         # فعال‌سازی دسترسی SSH با رمز عبور
         sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
         sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/g' /etc/ssh/sshd_config
         sudo service ssh restart
-        
+
+        # دریافت آی‌پی
+        TS_IP=$(tailscale ip -4)
+
+        # نمایش اطلاعات ورود در لاگ
+        echo ""
         echo "=========================================="
-        echo "Server successfully started on Tailscale!"
+        echo "  >>> LINUX SERVER IS READY! <<<"
+        echo "  Tailscale IP : $TS_IP"
+        echo "  Username     : runner"
+        echo "  Password     : P@ssw0rd1qazXSW@#"
+        echo "  >> Connect via SSH: ssh runner@$TS_IP"
         echo "=========================================="
 
     - name: Keep Alive (6 Hours)
       run: |
         for i in {1..360}; do
+          echo "[$i/360] Server running..."
           sleep 60
         done
