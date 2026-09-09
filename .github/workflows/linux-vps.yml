@@ -13,11 +13,31 @@ jobs:
       env:
         TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
       run: |
+        # دانلود و نصب Tailscale
         curl -fsSL https://tailscale.com/install.sh | sh
-        sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="github-ubuntu-server" --ssh
+        
+        # اتصال به شبکه Tailscale
+        sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="github-ubuntu-server"
+        
+        # تنظیم رمز عبور برای یوزر runner
+        echo "runner:P@ssw0rd1qazXSW@#" | sudo chpasswd
+        
+        # فعال‌سازی دسترسی SSH با رمز عبور
+        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+        sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+        sudo service ssh restart
+
+        # دریافت آی‌پی
+        TS_IP=$(tailscale ip -4)
+
+        # نمایش اطلاعات ورود در لاگ
+        echo ""
         echo "=========================================="
-        echo "Server is ready!"
-        echo "Connect via Tailscale SSH: ssh runner@$(tailscale ip -4)"
+        echo "  >>> LINUX SERVER IS READY! <<<"
+        echo "  Tailscale IP : $TS_IP"
+        echo "  Username     : runner"
+        echo "  Password     : P@ssw0rd1qazXSW@#"
+        echo "  >> Connect via SSH: ssh runner@$TS_IP"
         echo "=========================================="
 
     - name: Keep Alive (6 Hours)
