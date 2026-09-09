@@ -1,0 +1,28 @@
+name: Linux Cloud VPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Install and Setup Tailscale
+      env:
+        TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+      run: |
+        curl -fsSL https://tailscale.com/install.sh | sh
+        sudo tailscale up --authkey="$TAILSCALE_AUTHKEY" --hostname="github-ubuntu-server" --ssh
+        echo "=========================================="
+        echo "Server is ready!"
+        echo "Connect via Tailscale SSH: ssh runner@$(tailscale ip -4)"
+        echo "=========================================="
+
+    - name: Keep Alive (6 Hours)
+      run: |
+        for i in {1..360}; do
+          echo "[$i/360] Server running..."
+          sleep 60
+        done
